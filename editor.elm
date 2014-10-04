@@ -52,10 +52,13 @@ hoveredTile (x, y) =
     ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
      ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
 
+inGrid x y = 0 <= x && x < gridSize && 0 <= y && y < gridSize
+
 step input world =
     let (x, y) = hoveredTile input
         i      = toIndex x y
-    in { world | level1 <- Array.set i (1 - (Array.getOrFail i world.level1)) world.level1 }
+    in if inGrid x y then { world | level1 <- Array.set i (1 - (Array.getOrFail i world.level1)) world.level1 }
+        else world
 
 -- Display --
 
