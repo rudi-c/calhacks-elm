@@ -20,17 +20,20 @@ colFromIndex index = index % gridSize
 
 {- Bug : We shouldn't need to do explicit conversion to
          floats according to the docs, this seems to be a bug.
+   Bug : Operator precedence is wrong. * does not have higher precedence than +
 -}
 tile index val = filled red (square 49) 
-                 |> move (50.0 * (toFloat (rowFromIndex index)),
-                          50.0 * (toFloat (colFromIndex index)))
+                 |> move (50.0 * (toFloat (rowFromIndex index - gridSize // 2)),
+                          50.0 * (toFloat (colFromIndex index - gridSize // 2)))
 tiles = Array.indexedMap tile grid |> Array.toList
 
 -- Main --
 
+viewSize = gridSize * 50 * 3 // 2
 
 main : Element
-main = collage 300 300 tiles
+main = collage viewSize viewSize tiles
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
+         There should be more docs about how collage works.
 -}
