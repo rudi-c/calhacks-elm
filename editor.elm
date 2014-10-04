@@ -36,17 +36,26 @@ world = { level1 = Array.initialize (gridSize * gridSize) (always 0),
           level2 = Array.initialize (gridSize * gridSize) (always Nothing)
         }
 
-rowFromIndex : Int -> Int
-rowFromIndex index = index // gridSize
-
+-- col == x
 colFromIndex : Int -> Int
 colFromIndex index = index % gridSize
 
+-- row == y
+rowFromIndex : Int -> Int
+rowFromIndex index = index // gridSize
+
+toIndex x y = x + y * gridSize
+
 -- Update --
 
-step input grid = grid
-    --let (x, y) = input
-    --in Array.set 0 (1 - (Array.getOrFail 0 grid)) grid
+hoveredTile (x, y) = 
+    ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
+     ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
+
+step input world =
+    let (x, y) = hoveredTile input
+        i      = toIndex x y
+    in { world | level1 <- Array.set i (1 - (Array.getOrFail i world.level1)) world.level1 }
 
 -- Display --
 
@@ -55,10 +64,10 @@ step input grid = grid
    Bug : Operator precedence is wrong. * does not have higher precedence than +
 -}
 tile : Int -> Int -> Form
-tile index val = image (tileSize - 1) (tileSize - 1) (Dict.getOrFail val graphicsTiles)
+tile index val = image tileSize tileSize (Dict.getOrFail val graphicsTiles)
                  |> toForm
-                 |> moveInt (tileSize * (rowFromIndex index),
-                             tileSize * (colFromIndex index))
+                 |> moveInt (tileSize * (colFromIndex index),
+                             tileSize * (rowFromIndex index))
                  |> gridOffsetMove
 
 tileMaybe : Int -> Maybe Int -> Maybe Form
@@ -76,13 +85,10 @@ renderEditor world = collage viewSize viewSize (tiles world)
           but quite important. Should make more intuitive or improve docs.
 -}
 input = sampleOn Mouse.clicks Mouse.position
-hovered (x, y) = 
-    ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
-     ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
 
 main : Signal Element
 main = lift2 below 
-             (asText <~ (hovered <~ input)) 
+             (asText <~ (hoveredTile <~ input)) 
              (renderEditor <~ (foldp step world input))
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
