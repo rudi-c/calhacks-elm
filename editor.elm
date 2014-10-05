@@ -159,11 +159,10 @@ input = merge (AnyClick <~ mouseInput)
 
 main : Signal Element
 main = let currentEditor = (foldp step editor input)
-       in lift2 below
-                (asText <~ input)
-                (lift2 below 
-                       (renderBrushes <~ currentEditor)
-                       (renderEditor <~ currentEditor))
+       in foldr (lift2 below) (constant empty) 
+                [asText <~ input,
+                 renderBrushes <~ currentEditor,
+                 renderEditor <~ currentEditor]
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
          There should be more docs about how collage works.
