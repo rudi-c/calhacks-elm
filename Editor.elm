@@ -16,13 +16,6 @@ import Utils (..)
 
 -- Update --
 
-hoveredTile (x, y) =
-    ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
-     ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
-
-inGrid : (Int, Int) -> Bool
-inGrid (x, y) = 0 <= x && x < gridSize && 0 <= y && y < gridSize
-
 {- Feature request : Should be able to do
                      { editor.world | something <- something }
 -}
@@ -44,6 +37,7 @@ stepEditor input editor =
     case input of
         HitTile (x, y) -> stepAnyClick editor (hoveredTile (x, y))
         BrushClick brushId -> brushClick editor brushId
+        _ -> editor
 
 
 -- Display --

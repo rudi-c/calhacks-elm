@@ -2,7 +2,9 @@ module Main where
 
 import Mouse
 
-import Editor (..)
+import Constants (..)
+import Editor (renderEditorView, stepEditor)
+import Game (renderGameView, stepGame)
 import Model (..)
 
 -- Update --
@@ -12,7 +14,8 @@ step input state =
     case input of
        ButtonClick GoToGame   -> { state | playing <- True }
        ButtonClick GoToEditor -> { state | playing <- False }
-       _ -> if | state.playing -> state
+       _ -> if | state.playing -> let newGame = stepGame input state.game
+                                  in  { state | game <- newGame }
                | otherwise     -> let newEditor = stepEditor input state.editor
                                   in  { state | editor <- newEditor }
 
@@ -51,7 +54,7 @@ input = foldr merge (HitTile <~ mouseInput)
 main : Signal Element
 main = let stateSignal = foldp step initialState input
            do state = if state.playing then
-                          empty
+                          renderGameView state.game
                       else
                           renderEditorView state.editor
        in
