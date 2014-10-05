@@ -143,6 +143,7 @@ tileMaybe : Int -> Maybe Int -> Maybe Form
 tileMaybe index val = Maybe.map (\ v -> tile index v) val
 
 tiles {level1, level2} = 
+    [square (toFloat viewSize) |> filled lightBlue] ++
     (Array.indexedMap tile level1 |> Array.toList) ++
     (Array.indexedMap tileMaybe level2 |> Array.toList |> filterMap identity)
 
