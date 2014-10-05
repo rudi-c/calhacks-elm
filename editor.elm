@@ -24,7 +24,11 @@ gridOffset = -tileSize * (gridSize // 2)
 gridOffsetMove obj = moveInt (gridOffset, gridOffset) obj
 
 graphicsNames = map (String.append "graphics/Base pack/Tiles/") 
-                    ["sandCenter.png", "box.png"]
+                    ["sandCenter.png", 
+                     "grassLeft.png",
+                     "grassMid.png",
+                     "grassRight.png",
+                     "box.png"]
 graphicsTiles = zip [0..(length graphicsNames - 1)] graphicsNames 
                 |> Dict.fromList
 
@@ -76,8 +80,7 @@ inGrid x y = 0 <= x && x < gridSize && 0 <= y && y < gridSize
 stepAnyClick editor (x, y) = 
     let i = toIndex x y
     in if inGrid x y 
-        then let existing = (1 - (Array.getOrFail i editor.world.level1))
-                 newLevel = Array.set i existing editor.world.level1
+        then let newLevel = Array.set i editor.selectedBrush editor.world.level1
                  editorWorld = editor.world
                  newWorld = { editorWorld | level1 <- newLevel }
              in  
