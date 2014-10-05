@@ -46,7 +46,7 @@ gridOffsetMove obj = moveInt (gridOffset, gridOffset) obj
           move in a direction that will make this kind of UI easier to
           develop?
 -}
-data Update = AnyClick (Int, Int) | BrushClick Int
+data Update = HitTile (Int, Int) | BrushClick Int
 
 data Layer = Level1 | Level2
 
@@ -75,14 +75,15 @@ hoveredTile (x, y) =
     ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
      ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
 
-inGrid x y = 0 <= x && x < gridSize && 0 <= y && y < gridSize
+inGrid : (Int, Int) -> Bool
+inGrid (x, y) = 0 <= x && x < gridSize && 0 <= y && y < gridSize
 
 {- Feature request : Should be able to do 
                      { editor.world | something <- something }
 -}
 stepAnyClick editor (x, y) = 
     let i = toIndex x y
-    in if inGrid x y 
+    in if inGrid (x, y)
         then let newLevel = Array.set i editor.selectedBrush editor.world.level1
                  editorWorld = editor.world
                  newWorld = { editorWorld | level1 <- newLevel }
@@ -96,7 +97,7 @@ brushClick editor brushId =
 
 step input editor =
     case input of
-        AnyClick (x, y) -> stepAnyClick editor (hoveredTile (x, y))
+        HitTile (x, y) -> stepAnyClick editor (hoveredTile (x, y))
         BrushClick brushId -> brushClick editor brushId
 
 -- Display --
@@ -156,8 +157,26 @@ renderEditor editor = collage viewSize viewSize (tiles editor.world)
 {- Itch : Figuring out how to do something upon a mouse click is not obvious,
           but quite important. Should make more intuitive or improve docs.
 -}
-mouseInput = sampleOn Mouse.clicks Mouse.position
-input = merge (AnyClick <~ mouseInput)
+mouseClicks = sampleOn Mouse.clicks Mouse.position 
+
+mouseTileFolder : (Int, Int) -> (Bool, (Int, Int)) -> (Bool, (Int, Int))
+mouseTileFolder newPos (_, oldPos) =
+    let newTile = hoveredTile newPos
+        oldTile = hoveredTile oldPos
+    in
+        (newTile /= oldTile && (inGrid newTile), newPos)
+
+mouseTileChanged = 
+    let invalid = (-1, -1)
+        base = (False, invalid)
+    in  Mouse.position 
+        |> keepWhen Mouse.isDown invalid
+        |> foldp mouseTileFolder base
+        |> keepIf (\ (changed, pos) -> changed) base
+        |> lift (\ (changed, pos) -> pos)
+
+mouseInput = merge mouseClicks mouseTileChanged
+input = merge (HitTile <~ mouseInput)
               (BrushClick <~ brushChooser.signal)
 
 main : Signal Element
@@ -173,4 +192,6 @@ main = let currentEditor = (foldp step editor input)
 
 {- Feature request : Easy way to print the type of something. 
    Feature request : Search by function type.
+   Feature request : Elm library search should not be limited to current
+                     subdirectory (although it could prioritize it).
 -}
