@@ -13,13 +13,14 @@ moveInt (x, y) obj = move (toFloat x, toFloat y) obj
 
 -- Constants --
 tileSize : Int
-tileSize = 50
+tileSize = 70
 
 gridSize : Int
 gridSize = 8
 
 graphicsNames = map (String.append "graphics/Base pack/Tiles/") 
-                    ["sandCenter.png", 
+                    ["empty.png",
+                     "sandCenter.png",
                      "grassLeft.png",
                      "grassMid.png",
                      "grassRight.png",
@@ -48,7 +49,7 @@ data Update = AnyClick (Int, Int) | BrushClick Int
 data Layer = Level1 | Level2
 
 world = { level1 = Array.initialize (gridSize * gridSize) (always 0),
-          level2 = Array.initialize (gridSize * gridSize) (always Nothing)
+          level2 = Array.initialize (gridSize * gridSize) (always 0)
         }
 
 editor = { layer = Level1,
@@ -105,15 +106,17 @@ brushChooser = Input.input 0
    "Cannot read property 'make' of undefined
     Open the developer console for more details." (nothing in console)
 -}
-borderRectElement : Int -> Int -> Element
-borderRectElement w h = 
-    let thinLine = (solid white)
-        thickLine = { thinLine | width <- 5.0 }
+borderRectElement : Int -> Int -> Color -> Float -> Element
+borderRectElement w h color thickness =
+    let thinLine = (solid color)
+        thickLine = { thinLine | width <- thickness }
     in  collage w h [outlined thickLine (rect (toFloat w) (toFloat h))]
 
 wrapBox : Int -> Element -> Element
 wrapBox size elem = flow outward [container size size topLeft elem,
-                                  borderRectElement size size]
+                                  borderRectElement size size black 8.0,
+                                  borderRectElement size size white 6.0,
+                                  borderRectElement size size black 2.0]
 
 brushesList : Int -> [Element]
 brushesList selectedBrush = 
@@ -139,13 +142,10 @@ tile index val = image tileSize tileSize (Dict.getOrFail val graphicsTiles)
                              tileSize * (rowFromIndex index))
                  |> gridOffsetMove
 
-tileMaybe : Int -> Maybe Int -> Maybe Form
-tileMaybe index val = Maybe.map (\ v -> tile index v) val
-
 tiles {level1, level2} = 
     [square (toFloat viewSize) |> filled lightBlue] ++
     (Array.indexedMap tile level1 |> Array.toList) ++
-    (Array.indexedMap tileMaybe level2 |> Array.toList |> filterMap identity)
+    (Array.indexedMap tile level2 |> Array.toList)
 
 renderEditor editor = collage viewSize viewSize (tiles editor.world)
 
