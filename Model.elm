@@ -2,6 +2,7 @@ module Model where
 
 import Array
 import Graphics.Input as Input
+import Keyboard
 
 import Constants (..)
 
@@ -21,7 +22,10 @@ buttonClick = Input.input GoToGame
           move in a direction that will make this kind of UI easier to
           develop?
 -}
-data Update = HitTile (Int, Int) | BrushClick Int | ButtonClick ButtonClickType
+data Update = HitTile (Int, Int)
+              | BrushClick Int
+              | ButtonClick ButtonClickType
+              | GameDelta (Float, {x: Int, y: Int})
 
 brushChooser : Input.Input Int
 brushChooser = Input.input 0
@@ -52,7 +56,7 @@ initialEditor = { layer = Level1,
 initialAlien : Alien
 initialAlien = { dir = Right,
                  x = 0.0,
-                 y = 0.0,
+                 y = (toFloat tileSize),
                  vx = 0.0,
                  vy = 0.0
                }

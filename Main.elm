@@ -6,6 +6,7 @@ import Constants (..)
 import Editor (renderEditorView, stepEditor)
 import Game (renderGameView, stepGame)
 import Model (..)
+import Keyboard
 
 -- Update --
 
@@ -44,9 +45,17 @@ mouseTileChanged =
         |> lift (\ (changed, pos) -> pos)
 
 mouseInput = merge mouseClicks mouseTileChanged
+
+-- From mario sample
+gameInput = let delta = lift (\t -> t/20) (fps 25)
+            in  sampleOn delta (lift2 (,) delta Keyboard.arrows)
+
 input = foldr merge (HitTile <~ mouseInput)
                     [(BrushClick <~ brushChooser.signal),
-                     (ButtonClick <~ buttonClick.signal)]
+                     (ButtonClick <~ buttonClick.signal),
+                     (GameDelta <~ gameInput)]
+
+
 
 {- Itch : A typo like state.isPlaying instead of state.playing gives
           a very unhelpful error message.
