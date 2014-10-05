@@ -1,21 +1,21 @@
 <html>
- 
+
   <head>
-    <title>Embedding Elm in HTML!</title>
+    <title>Elm Platformer</title>
     <script type="text/javascript" src="http://elm-lang.org/elm-runtime.js"></script>
-    <script type="text/javascript" src="build/Editor.js"></script>
+    <script type="text/javascript" src="build/Main.js"></script>
   </head>
- 
+
   <body>
-    <div id="editor" style="width:50%; height:600px;"></div>
+    <div id="main" style="width:50%; height:600px;"></div>
   </body>
- 
+
   <script type="text/javascript">
     // Don't want to allow the browser to drag our rendered tiles.
-    window.ondragstart = function() { return false; } 
+    window.ondragstart = function() { return false; }
 
-    var editorDiv = document.getElementById('editor');
-    Elm.embed(Elm.Editor, editorDiv);
+    var mainDiv = document.getElementById('main');
+    Elm.embed(Elm.Main, mainDiv);
   </script>
- 
+
 </html>
