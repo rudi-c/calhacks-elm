@@ -101,12 +101,32 @@ step input editor =
 brushChooser : Input.Input Int
 brushChooser = Input.input 0
 
-brushesList : [Element]
-brushesList = Dict.toList graphicsTiles
-              |> map (\ (brushId, brushPath) -> 
-                        image tileSize tileSize brushPath
-                        |> Input.clickable brushChooser.handle brushId)
-renderBrushes editor = flow right brushesList
+{- Bug : Repeated parameter names gives unhelpful error message. 
+   "Cannot read property 'make' of undefined
+    Open the developer console for more details." (nothing in console)
+-}
+borderRectElement : Int -> Int -> Element
+borderRectElement w h = 
+    let thinLine = (solid white)
+        thickLine = { thinLine | width <- 5.0 }
+    in  collage w h [outlined thickLine (rect (toFloat w) (toFloat h))]
+
+wrapBox : Int -> Element -> Element
+wrapBox size elem = flow outward [container size size topLeft elem,
+                                  borderRectElement size size]
+
+brushesList : Int -> [Element]
+brushesList selectedBrush = 
+    Dict.toList graphicsTiles
+    |> map (\ (brushId, brushPath) -> 
+                (if selectedBrush == brushId then
+                     wrapBox tileSize (image tileSize tileSize brushPath)
+                 else
+                     image tileSize tileSize brushPath)
+                |> Input.clickable brushChooser.handle brushId
+           )
+
+renderBrushes editor = flow right (brushesList editor.selectedBrush)
 
 {- Bug : We shouldn't need to do explicit conversion to
          floats according to the docs, this seems to be a bug.
