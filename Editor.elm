@@ -8,34 +8,8 @@ import Mouse
 import String
 import Window
 
--- Utils --
-
-moveInt : (Int, Int) -> Form -> Form 
-moveInt (x, y) obj = move (toFloat x, toFloat y) obj
-
--- Constants --
-tileSize : Int
-tileSize = 70
-
-gridSize : Int
-gridSize = 8
-
-graphicsNames = map (String.append "graphics/Base pack/Tiles/") 
-                    ["empty.png",
-                     "sandCenter.png",
-                     "grassLeft.png",
-                     "grassMid.png",
-                     "grassRight.png",
-                     "box.png"]
-graphicsTiles = zip [0..(length graphicsNames - 1)] graphicsNames 
-                |> Dict.fromList
-
-viewSize = gridSize * tileSize
-
-gridOffset : Int
-gridOffset = -viewSize // 2 + tileSize // 2
-
-gridOffsetMove obj = moveInt (gridOffset, gridOffset) obj
+import Constants (..)
+import Utils (..)
 
 -- Model --
 
@@ -50,14 +24,30 @@ data Update = HitTile (Int, Int) | BrushClick Int
 
 data Layer = Level1 | Level2
 
-world = { level1 = Array.initialize (gridSize * gridSize) (always 0),
-          level2 = Array.initialize (gridSize * gridSize) (always 0)
-        }
+type World = { level1: Array.Array Int, level2: Array.Array Int }
+type Editor = { layer: Layer, selectedBrush: Int, world: World }
+type Game = {}
+type State = { editor: Editor, game: Game, playing: Bool }
 
-editor = { layer = Level1,
-           selectedBrush = 0,
-           world = world
-         }
+initialWorld : World
+initialWorld = { level1 = Array.initialize (gridSize * gridSize) (always 0),
+                 level2 = Array.initialize (gridSize * gridSize) (always 0)
+               }
+
+initialEditor : Editor
+initialEditor = { layer = Level1,
+                  selectedBrush = 0,
+                  world = initialWorld
+                }
+
+initialGame : Game
+initialGame = { }
+
+initialState : State
+initialState = { editor = initialEditor,
+                 game = initialGame,
+                 playing = False
+               }
 
 -- col == x
 colFromIndex : Int -> Int
@@ -71,41 +61,46 @@ toIndex x y = x + y * gridSize
 
 -- Update --
 
-hoveredTile (x, y) = 
+hoveredTile (x, y) =
     ((x - (viewSize // 2) - gridOffset + (tileSize // 2)) // tileSize,
      ((viewSize // 2) - y - gridOffset + (tileSize // 2)) // tileSize)
 
 inGrid : (Int, Int) -> Bool
 inGrid (x, y) = 0 <= x && x < gridSize && 0 <= y && y < gridSize
 
-{- Feature request : Should be able to do 
+{- Feature request : Should be able to do
                      { editor.world | something <- something }
 -}
-stepAnyClick editor (x, y) = 
+stepAnyClick editor (x, y) =
     let i = toIndex x y
     in if inGrid (x, y)
         then let newLevel = Array.set i editor.selectedBrush editor.world.level1
                  editorWorld = editor.world
                  newWorld = { editorWorld | level1 <- newLevel }
-             in  
+             in
                  { editor | world <- newWorld }
         else editor
 
 brushClick editor brushId =
     { editor | selectedBrush <- brushId }
 
-
-step input editor =
+stepEditor : Update -> Editor -> Editor
+stepEditor input editor =
     case input of
         HitTile (x, y) -> stepAnyClick editor (hoveredTile (x, y))
         BrushClick brushId -> brushClick editor brushId
+
+step : Update -> State -> State
+step input state = if state.playing then
+                       state
+                   else { state | editor <- stepEditor input state.editor }
 
 -- Display --
 
 brushChooser : Input.Input Int
 brushChooser = Input.input 0
 
-{- Bug : Repeated parameter names gives unhelpful error message. 
+{- Bug : Repeated parameter names gives unhelpful error message.
    "Cannot read property 'make' of undefined
     Open the developer console for more details." (nothing in console)
 -}
@@ -122,9 +117,9 @@ wrapBox size elem = flow outward [container size size topLeft elem,
                                   borderRectElement size size black 2.0]
 
 brushesList : Int -> [Element]
-brushesList selectedBrush = 
+brushesList selectedBrush =
     Dict.toList graphicsTiles
-    |> map (\ (brushId, brushPath) -> 
+    |> map (\ (brushId, brushPath) ->
                 (if selectedBrush == brushId then
                      wrapBox tileSize (image tileSize tileSize brushPath)
                  else
@@ -145,7 +140,7 @@ tile index val = image tileSize tileSize (Dict.getOrFail val graphicsTiles)
                              tileSize * (rowFromIndex index))
                  |> gridOffsetMove
 
-tiles {level1, level2} = 
+tiles {level1, level2} =
     [square (toFloat viewSize) |> filled lightBlue] ++
     (Array.indexedMap tile level1 |> Array.toList) ++
     (Array.indexedMap tile level2 |> Array.toList)
@@ -157,7 +152,7 @@ renderEditor editor = collage viewSize viewSize (tiles editor.world)
 {- Itch : Figuring out how to do something upon a mouse click is not obvious,
           but quite important. Should make more intuitive or improve docs.
 -}
-mouseClicks = sampleOn Mouse.clicks Mouse.position 
+mouseClicks = sampleOn Mouse.clicks Mouse.position
 
 mouseTileFolder : (Int, Int) -> (Bool, (Int, Int)) -> (Bool, (Int, Int))
 mouseTileFolder newPos (_, oldPos) =
@@ -166,10 +161,10 @@ mouseTileFolder newPos (_, oldPos) =
     in
         (newTile /= oldTile && (inGrid newTile), newPos)
 
-mouseTileChanged = 
+mouseTileChanged =
     let invalid = (-1, -1)
         base = (False, invalid)
-    in  Mouse.position 
+    in  Mouse.position
         |> keepWhen Mouse.isDown invalid
         |> foldp mouseTileFolder base
         |> keepIf (\ (changed, pos) -> changed) base
@@ -179,18 +174,26 @@ mouseInput = merge mouseClicks mouseTileChanged
 input = merge (HitTile <~ mouseInput)
               (BrushClick <~ brushChooser.signal)
 
+{- Itch : A typo like state.isPlaying instead of state.playing gives
+          a very unhelpful error message.
+-}
 main : Signal Element
-main = let currentEditor = (foldp step editor input)
-       in foldr (lift2 below) (constant empty) 
-                [renderBrushes <~ currentEditor,
-                 constant <| spacer 50 50,
-                 renderEditor <~ currentEditor]
+main = let stateSignal = foldp step initialState input
+           do state = if state.playing then
+                          empty
+                      else
+                          foldr below empty
+                                [renderBrushes state.editor,
+                                 spacer 50 50,
+                                 renderEditor state.editor]
+       in
+           do <~ stateSignal
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
          There should be more docs about how collage works.
 -}
 
-{- Feature request : Easy way to print the type of something. 
+{- Feature request : Easy way to print the type of something.
    Feature request : Search by function type.
    Feature request : Elm library search should not be limited to current
                      subdirectory (although it could prioritize it).
