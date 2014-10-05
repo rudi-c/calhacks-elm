@@ -1,5 +1,6 @@
 import Array
 import Dict
+import Graphics.Input as Input
 import Maybe
 import Mouse
 import String
@@ -11,7 +12,6 @@ moveInt : (Int, Int) -> Form -> Form
 moveInt (x, y) obj = move (toFloat x, toFloat y) obj
 
 -- Constants --
-
 tileSize : Int
 tileSize = 50
 
@@ -32,9 +32,25 @@ viewSize = gridSize * 50 * 3 // 2
 
 -- Model --
 
+{- Itch : Right now, it seems there isn't great ways to handle multiple
+          input signals other than merging them and doing case analysis,
+          which doesn't scale very well and is tantamount to reimplementing
+          an update loop. Are there better solutions? Is Elm planning to
+          move in a direction that will make this kind of UI easier to
+          develop?
+-}
+data Update = AnyClick (Int, Int) | BrushClick Int
+
+data Layer = Level1 | Level2
+
 world = { level1 = Array.initialize (gridSize * gridSize) (always 0),
           level2 = Array.initialize (gridSize * gridSize) (always Nothing)
         }
+
+editor = { layer = Level1,
+           selectedBrush = 0,
+           world = world
+         }
 
 -- col == x
 colFromIndex : Int -> Int
@@ -54,13 +70,40 @@ hoveredTile (x, y) =
 
 inGrid x y = 0 <= x && x < gridSize && 0 <= y && y < gridSize
 
-step input world =
-    let (x, y) = hoveredTile input
-        i      = toIndex x y
-    in if inGrid x y then { world | level1 <- Array.set i (1 - (Array.getOrFail i world.level1)) world.level1 }
-        else world
+{- Feature request : Should be able to do 
+                     { editor.world | something <- something }
+-}
+stepAnyClick editor (x, y) = 
+    let i = toIndex x y
+    in if inGrid x y 
+        then let existing = (1 - (Array.getOrFail i editor.world.level1))
+                 newLevel = Array.set i existing editor.world.level1
+                 editorWorld = editor.world
+                 newWorld = { editorWorld | level1 <- newLevel }
+             in  
+                 { editor | world <- newWorld }
+        else editor
+
+brushClick editor brushId =
+    { editor | selectedBrush <- brushId }
+
+
+step input editor =
+    case input of
+        AnyClick (x, y) -> stepAnyClick editor (hoveredTile (x, y))
+        BrushClick brushId -> brushClick editor brushId
 
 -- Display --
+
+brushChooser : Input.Input Int
+brushChooser = Input.input 0
+
+brushesList : [Element]
+brushesList = Dict.toList graphicsTiles
+              |> map (\ (brushId, brushPath) -> 
+                        image tileSize tileSize brushPath
+                        |> Input.clickable brushChooser.handle brushId)
+renderBrushes editor = flow right brushesList
 
 {- Bug : We shouldn't need to do explicit conversion to
          floats according to the docs, this seems to be a bug.
@@ -80,19 +123,24 @@ tiles {level1, level2} =
     (Array.indexedMap tile level1 |> Array.toList) ++
     (Array.indexedMap tileMaybe level2 |> Array.toList |> filterMap identity)
 
-renderEditor world = collage viewSize viewSize (tiles world)
+renderEditor editor = collage viewSize viewSize (tiles editor.world)
 
 -- Main --
 
 {- Itch : Figuring out how to do something upon a mouse click is not obvious,
           but quite important. Should make more intuitive or improve docs.
 -}
-input = sampleOn Mouse.clicks Mouse.position
+mouseInput = sampleOn Mouse.clicks Mouse.position
+input = merge (AnyClick <~ mouseInput)
+              (BrushClick <~ brushChooser.signal)
 
 main : Signal Element
-main = lift2 below 
-             (asText <~ (hoveredTile <~ input)) 
-             (renderEditor <~ (foldp step world input))
+main = let currentEditor = (foldp step editor input)
+       in lift2 below
+                (asText <~ input)
+                (lift2 below 
+                       (renderBrushes <~ currentEditor)
+                       (renderEditor <~ currentEditor))
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
          There should be more docs about how collage works.
