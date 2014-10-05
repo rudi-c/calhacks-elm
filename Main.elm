@@ -15,7 +15,8 @@ step input state =
     case input of
        ButtonClick GoToGame   -> { state | playing <- True }
        ButtonClick GoToEditor -> { state | playing <- False }
-       _ -> if | state.playing -> let newGame = stepGame input state.game
+       _ -> if | state.playing -> let newGame = stepGame input state.editor.world
+                                                         state.game
                                   in  { state | game <- newGame }
                | otherwise     -> let newEditor = stepEditor input state.editor
                                   in  { state | editor <- newEditor }

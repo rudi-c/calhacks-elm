@@ -78,4 +78,5 @@ colFromIndex index = index % gridSize
 rowFromIndex : Int -> Int
 rowFromIndex index = index // gridSize
 
+toIndex : Int -> Int -> Int
 toIndex x y = x + y * gridSize
