@@ -54,7 +54,7 @@ input = foldr merge (HitTile <~ mouseInput)
 main : Signal Element
 main = let stateSignal = foldp step initialState input
            do state = if state.playing then
-                          renderGameView state.game
+                          renderGameView state.game state.editor.world
                       else
                           renderEditorView state.editor
        in

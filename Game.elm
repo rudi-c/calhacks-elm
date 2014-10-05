@@ -6,11 +6,14 @@ import Model (..)
 -- Update --
 
 stepGame : Update -> Game -> Game
-stepGame input editor =
+stepGame input game =
     case input of
-        _ -> editor
+        _ -> game
 
 
 -- Display --
 
-renderGameView game = empty
+renderGameView game world =
+    let worldForms = CommonDisplay.tilesForWorld world
+    in
+        CommonDisplay.renderFromForms worldForms

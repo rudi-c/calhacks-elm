@@ -18,9 +18,9 @@ tile index val = image tileSize tileSize (Dict.getOrFail val graphicsTiles)
                              tileSize * (rowFromIndex index))
                  |> gridOffsetMove
 
-tiles {level1, level2} =
+tilesForWorld {level1, level2} =
     [square (toFloat viewSize) |> filled lightBlue] ++
     (Array.indexedMap tile level1 |> Array.toList) ++
     (Array.indexedMap tile level2 |> Array.toList)
 
-renderEditor editor = collage viewSize viewSize (tiles editor.world)
+renderFromForms forms = collage viewSize viewSize forms

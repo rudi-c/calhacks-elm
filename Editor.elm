@@ -77,5 +77,6 @@ renderEditorView editor =
            spacer 30 30,
            renderBrushes editor,
            spacer 50 50,
-           CommonDisplay.renderEditor editor]
+           CommonDisplay.tilesForWorld editor.world
+           |> CommonDisplay.renderFromForms]
 
