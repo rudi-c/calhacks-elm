@@ -16,12 +16,7 @@ tileSize : Int
 tileSize = 50
 
 gridSize : Int
-gridSize = 4
-
-gridOffset : Int
-gridOffset = -tileSize * (gridSize // 2)
-
-gridOffsetMove obj = moveInt (gridOffset, gridOffset) obj
+gridSize = 8
 
 graphicsNames = map (String.append "graphics/Base pack/Tiles/") 
                     ["sandCenter.png", 
@@ -32,7 +27,12 @@ graphicsNames = map (String.append "graphics/Base pack/Tiles/")
 graphicsTiles = zip [0..(length graphicsNames - 1)] graphicsNames 
                 |> Dict.fromList
 
-viewSize = gridSize * 50 * 3 // 2
+viewSize = gridSize * tileSize
+
+gridOffset : Int
+gridOffset = -viewSize // 2 + tileSize // 2
+
+gridOffsetMove obj = moveInt (gridOffset, gridOffset) obj
 
 -- Model --
 
