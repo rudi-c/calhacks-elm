@@ -30,10 +30,12 @@ brushChooser = Input.input 0
 -- Model --
 
 data Layer = Level1 | Level2
+data Direction = Left | Right
 
 type World = { level1: Array.Array Int, level2: Array.Array Int }
 type Editor = { layer: Layer, selectedBrush: Int, world: World }
-type Game = {}
+type Alien = { dir: Direction, x: Float, y: Float, vx: Float, vy: Float }
+type Game = { alien: Alien }
 type State = { editor: Editor, game: Game, playing: Bool }
 
 initialWorld : World
@@ -47,8 +49,16 @@ initialEditor = { layer = Level1,
                   world = initialWorld
                 }
 
+initialAlien : Alien
+initialAlien = { dir = Right,
+                 x = 0.0,
+                 y = 0.0,
+                 vx = 0.0,
+                 vy = 0.0
+               }
+
 initialGame : Game
-initialGame = { }
+initialGame = { alien = initialAlien }
 
 initialState : State
 initialState = { editor = initialEditor,

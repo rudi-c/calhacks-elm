@@ -23,4 +23,5 @@ tilesForWorld {level1, level2} =
     (Array.indexedMap tile level1 |> Array.toList) ++
     (Array.indexedMap tile level2 |> Array.toList)
 
+renderFromForms : [Form] -> Element
 renderFromForms forms = collage viewSize viewSize forms
