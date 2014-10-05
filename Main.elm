@@ -13,7 +13,8 @@ import Keyboard
 step : Update -> State -> State
 step input state =
     case input of
-       ButtonClick GoToGame   -> { state | playing <- True }
+       ButtonClick GoToGame   -> { state | playing <- True,
+                                           game    <- initialGame }
        ButtonClick GoToEditor -> { state | playing <- False }
        _ -> if | state.playing -> let newGame = stepGame input state.editor.world
                                                          state.game

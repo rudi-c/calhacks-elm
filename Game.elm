@@ -3,6 +3,7 @@ module Game where
 import Array
 import CommonDisplay
 import Constants (..)
+import Graphics.Input as Input
 import Model (..)
 import Utils (..)
 
@@ -111,4 +112,8 @@ renderGameView game world =
     let worldForms = CommonDisplay.tilesForWorld world
         character  = [alienImage game.alien]
     in
-        CommonDisplay.renderFromForms (worldForms ++ character)
+        foldr below empty
+            [Input.button buttonClick.handle GoToEditor "Go To Editor",
+             spacer 30 30,
+             CommonDisplay.renderFromForms (worldForms ++ character)
+            ]
