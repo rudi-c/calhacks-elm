@@ -182,8 +182,8 @@ input = merge (HitTile <~ mouseInput)
 main : Signal Element
 main = let currentEditor = (foldp step editor input)
        in foldr (lift2 below) (constant empty) 
-                [asText <~ input,
-                 renderBrushes <~ currentEditor,
+                [renderBrushes <~ currentEditor,
+                 constant <| spacer 50 50,
                  renderEditor <~ currentEditor]
 
 {- Bug : I don't think collage should have the origin somewhere in the center.
