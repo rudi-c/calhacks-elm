@@ -11,6 +11,9 @@
   </body>
  
   <script type="text/javascript">
+    // Don't want to allow the browser to drag our rendered tiles.
+    window.ondragstart = function() { return false; } 
+
     var editorDiv = document.getElementById('editor');
     Elm.embed(Elm.Editor, editorDiv);
   </script>
