@@ -1,3 +1,5 @@
+module Editor where
+
 import Array
 import Dict
 import Graphics.Input as Input
