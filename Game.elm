@@ -29,33 +29,43 @@ physics world dt alien =
             let xIndexLeft  = (floor (nextX - w / 2)) // tileSize
                 xIndexRight = (floor (nextX + w / 2)) // tileSize
                 yIndex = (floor alien.y) // tileSize
-                indexLeft  = toIndex xIndexLeft yIndex
-                indexRight = toIndex xIndexRight yIndex
+                yIndexTop = (floor alien.y + h) // tileSize
             in
-                if (isObstacle world indexLeft) ||
-                   (isObstacle world indexRight)
+                if (isObstacle world <| toIndex xIndexLeft  yIndex) ||
+                   (isObstacle world <| toIndex xIndexRight yIndex) ||
+                   (isObstacle world <| toIndex xIndexLeft  yIndexTop) ||
+                   (isObstacle world <| toIndex xIndexRight yIndexTop)
                 then
                     { alien | vx <- 0.0 }
                 else
                     { alien | x <- nextX }
 
-        handleFloor alien =
-            let xIndex = (floor alien.x) // tileSize
+        handleVertical alien =
+            let xIndexLeft  = (floor (alien.x - w / 2)) // tileSize
+                xIndexRight = (floor (alien.x + w / 2)) // tileSize
                 yIndex = (floor alien.y) // tileSize
                 yIndexNext = (floor nextY) // tileSize
+                yIndexNextTop = (floor nextY + h) // tileSize
             in
-                if (alien.vy /= 0.0) &&
-                   (isObstacle world (toIndex xIndex yIndexNext))
-                then
-                    { alien | vy <- 0.0,
-                              y  <- toFloat (yIndex * tileSize) }
-                else
-                    { alien | y <- nextY }
+                if | (alien.vy /= 0.0) &&
+                     ((isObstacle world (toIndex xIndexLeft  yIndexNext)) ||
+                      (isObstacle world (toIndex xIndexRight yIndexNext)))
+                     -- Floor
+                     -> { alien | vy <- 0.0,
+                                  y  <- toFloat (yIndex * tileSize) }
+                   | (alien.vy /= 0.0) &&
+                     ((isObstacle world (toIndex xIndexLeft  yIndexNextTop)) ||
+                      (isObstacle world (toIndex xIndexRight yIndexNextTop)))
+                     -- Ceiling
+                     -- Need a slightly negative initial velocity to prevent
+                     -- the player from holding the up button and levitating.
+                     -> { alien | vy <- -0.1 }
+                   | otherwise -> { alien | y <- nextY }
 
     in
         alien
         |> handleHorizontal
-        |> handleFloor
+        |> handleVertical
 
 
 walk {x} alien = { alien | vx <- 3.0 * toFloat x,
