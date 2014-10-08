@@ -1,0 +1,21 @@
+<html>
+
+  <head>
+    <title>Bug reports, comments and feature requests.</title>
+    <script type="text/javascript" src="http://elm-lang.org/elm-runtime.js"></script>
+    <script type="text/javascript" src="build/Bugreport.js"></script>
+  </head>
+
+  <body>
+    <div id="bugreport" style="width:50%; height:600px;"></div>
+  </body>
+
+  <script type="text/javascript">
+    // Don't want to allow the browser to drag our rendered tiles.
+    window.ondragstart = function() { return false; }
+
+    var bugreportDiv = document.getElementById('bugreport');
+    Elm.embed(Elm.Bugreport, bugreportDiv);
+  </script>
+
+</html>
